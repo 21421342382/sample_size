@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dice Sample Space Generator</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        .container {
+            width: 80%;
+            margin: auto;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        .top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #download-link {
+            display: none;
+            margin-left: auto;
+        }
+        #loading-message {
+            display: none;
+            font-size: 1.2em;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dice Sample Space Generator</h1>
+        <div class="top-section">
+            <form id="dice-form">
+                <label for="numOfDice">Number of Dice:</label>
+                <input type="number" id="numOfDice" name="numOfDice" min="1" max="8" required>
+                <button type="submit">Generate Sample Space</button>
+            </form>
+            <a id="download-link" href="#" class="btn">Download CSV</a>
+        </div>
+        <div id="loading-message">Creating the sample size, please wait...</div>
+        <table id="sample-space-table">
+            <thead>
+                <!-- Dynamic header based on number of dice -->
+            </thead>
+            <tbody>
+                <!-- Dynamic rows based on generated sample space -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.getElementById('dice-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const numOfDice = document.getElementById('numOfDice').value;
+            const loadingMessage = document.getElementById('loading-message');
+            const downloadLink = document.getElementById('download-link');
+            const sampleSpaceTable = document.getElementById('sample-space-table');
+            
+            loadingMessage.style.display = 'block'; // Show loading message
+            downloadLink.style.display = 'none'; // Hide download link
+            
+            fetch('/generate-sample', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ numOfDice }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const sampleSpace = data.sampleSpace;
+                const filePath = data.filePath;
+                const tableHead = sampleSpaceTable.querySelector('thead');
+                const tableBody = sampleSpaceTable.querySelector('tbody');
+                
+                // Clear previous table content
+                tableHead.innerHTML = '';
+                tableBody.innerHTML = '';
+
+                // Create table headers
+                const headerRow = document.createElement('tr');
+                for (let i = 1; i <= numOfDice; i++) {
+                    const th = document.createElement('th');
+                    th.textContent = `Dice ${i}`;
+                    headerRow.appendChild(th);
+                }
+                tableHead.appendChild(headerRow);
+
+                // Create table rows
+                sampleSpace.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value;
+                        tr.appendChild(td);
+                    });
+                    tableBody.appendChild(tr);
+                });
+
+                // Show the download link
+                downloadLink.style.display = 'inline';
+                downloadLink.href = filePath;
+
+                // Hide the loading message
+                loadingMessage.style.display = 'none';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to generate sample space.');
+                loadingMessage.style.display = 'none'; // Hide the loading message on error
+            });
+        });
+    </script>
+</body>
+</html>
